@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Example Application</title>
+        <script type="text/javascript">
+            window.onload = function() {
+              fetch('http://localhost:8080/getdata').then(function(response) {
+                var div = document.getElementById('content');
+                response.text().then(function(text) {
+                    div.innerHTML = text;
+                });
+              })
+
+              var btn = document.getElementById('putdata_btn');
+              btn.addEventListener("click", function() {
+                fetch('http://localhost:8080/putdata', { method: 'put', body: "test=test" }).then(function(response) {
+                    div.innerHTML = "PUT succeeded";
+                });
+              });
+            }
+        </script>
+    </head>
+    <body>
+        <div id="content"></div>
+
+        <div>
+            <input type="button" id="putdata_btn" value="PUT data" />
+        </div>
+    </body>
+</html>
