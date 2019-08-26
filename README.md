@@ -26,7 +26,7 @@ Load the *cors.lua* file via the `lua-load` directive in the `global` section of
 ```
 global
     log stdout local0
-    lua-load /etc/haproxy/cors.lua
+    lua-load /path/to/cors.lua
 ```
 
 In your `frontend` or `listen` section, capture the client's *Origin* request header by adding `http-request lua.cors`:
