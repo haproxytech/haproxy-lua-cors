@@ -32,6 +32,17 @@ function cors_request(txn)
   end
 end
 
+-- Add headers for CORS preflight request
+function preflight_request(txn, allowed_methods)
+  if method == "OPTIONS" then
+    core.Debug("CORS: preflight request OPTIONS")
+    txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
+    txn.http:res_set_header("Allow", allowed_methods)
+    txn.http:res_add_header("Access-Control-Allow-Credentials", "true")
+    txn.http:res_add_header("Access-Control-Max-Age", 600)
+  end
+end
+
 -- When invoked during a response, sets CORS headers so that the browser
 -- can read the response from permitted domains.
 -- txn: The current transaction object that gives access to response properties.
@@ -44,15 +55,6 @@ function cors_response(txn, allowed_methods, allowed_origins)
   -- Always vary on the Origin
   txn.http:res_add_header("Vary", "Accept-Encoding,Origin")
 
-  -- add headers for CORS preflight request
-  if method == "OPTIONS" then
-    core.Debug("CORS: preflight request OPTIONS")
-    txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
-    txn.http:res_set_header("Allow", allowed_methods)
-    txn.http:res_add_header("Access-Control-Allow-Credentials", "true")
-    txn.http:res_add_header("Access-Control-Max-Age", 600)
-  end
-
   -- Bail if client did not send an Origin
   if origin == nil or origin == '' then
     return
@@ -63,9 +65,11 @@ function cors_response(txn, allowed_methods, allowed_origins)
   if contains(allowed_origins, "*") then
     core.Debug("CORS: " .. "* allowed")
     txn.http:res_add_header("Access-Control-Allow-Origin", "*")
+    preflight_request(txn, allowed_methods)
   elseif contains(allowed_origins, origin:match("//([^/]+)")) then
     core.Debug("CORS: " .. origin .. " allowed")
     txn.http:res_add_header("Access-Control-Allow-Origin", origin)
+    preflight_request(txn, allowed_methods)
   else
     core.Debug("CORS: " .. origin .. " not allowed")
   end
