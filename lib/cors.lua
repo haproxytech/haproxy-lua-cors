@@ -33,11 +33,10 @@ function cors_request(txn)
 end
 
 -- Add headers for CORS preflight request
-function preflight_request(txn, allowed_methods)
+function preflight_request(txn, method, allowed_methods)
   if method == "OPTIONS" then
     core.Debug("CORS: preflight request OPTIONS")
     txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
-    txn.http:res_set_header("Allow", allowed_methods)
     txn.http:res_add_header("Access-Control-Allow-Credentials", "true")
     txn.http:res_add_header("Access-Control-Max-Age", 600)
   end
@@ -65,11 +64,11 @@ function cors_response(txn, allowed_methods, allowed_origins)
   if contains(allowed_origins, "*") then
     core.Debug("CORS: " .. "* allowed")
     txn.http:res_add_header("Access-Control-Allow-Origin", "*")
-    preflight_request(txn, allowed_methods)
+    preflight_request(txn, method, allowed_methods)
   elseif contains(allowed_origins, origin:match("//([^/]+)")) then
     core.Debug("CORS: " .. origin .. " allowed")
     txn.http:res_add_header("Access-Control-Allow-Origin", origin)
-    preflight_request(txn, allowed_methods)
+    preflight_request(txn, method, allowed_methods)
   else
     core.Debug("CORS: " .. origin .. " not allowed")
   end
