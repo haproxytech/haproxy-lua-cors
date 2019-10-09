@@ -5,8 +5,9 @@
         <title>Example Application</title>
         <script type="text/javascript">
             window.onload = function() {
+              var div = document.getElementById('content');
+
               fetch('http://localhost:8080/getdata').then(function(response) {
-                var div = document.getElementById('content');
                 response.text().then(function(text) {
                     div.innerHTML = text;
                 });
