@@ -49,7 +49,6 @@ function cors_response(txn, allowed_methods, allowed_origins)
     core.Debug("CORS: preflight request OPTIONS")
     txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
     txn.http:res_set_header("Allow", allowed_methods)
-    txn.http:res_add_header("Access-Control-Allow-Credentials", "true")
     txn.http:res_add_header("Access-Control-Max-Age", 600)
   end
 

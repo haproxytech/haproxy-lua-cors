@@ -37,7 +37,6 @@ function preflight_request(txn, method, allowed_methods)
   if method == "OPTIONS" then
     core.Debug("CORS: preflight request OPTIONS")
     txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
-    txn.http:res_add_header("Access-Control-Allow-Credentials", "true")
     txn.http:res_add_header("Access-Control-Max-Age", 600)
   end
 end
