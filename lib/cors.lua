@@ -8,11 +8,15 @@
 -- Copyright (c) 2019. HAProxy Technologies, LLC.
 
 -- Loops through array to find the given string.
--- items: array of strings
+-- items: array of strings, if a string starts with a dot - any test_str ending with the string will be matched
 -- test_str: string to search for
 function contains(items, test_str)
   for _,item in pairs(items) do
+    -- Exact match
     if item == test_str then
+      return true
+    -- Match all subdomains
+    elseif item:match('^%.') and test_str:match('^.*' .. item:gsub('%.','%%.') .. '$') then
       return true
     end
   end
