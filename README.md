@@ -46,3 +46,10 @@ You can also whitelist all domains by setting the second parameter to an asteris
 ```
 http-response lua.cors "GET,PUT,POST" "*"
 ```
+
+To terminate OPTIONS request without sending it to the backend and return an empty response to the client add the following to the same section:
+
+```
+acl is_options method OPTIONS
+http-request use-service lua.empty-response if is_options
+```

@@ -76,3 +76,14 @@ end
 -- Register the actions with HAProxy
 core.register_action("cors", {"http-req"}, cors_request, 0)
 core.register_action("cors", {"http-res"}, cors_response, 2)
+
+-- Returns an empty response to the client
+function empty_response(applet)
+  applet:add_header("content-length", 0)
+  applet:set_status(204)
+  applet:start_response("")
+  applet:send(response)
+end
+
+-- Register the empty-response service with HAProxy
+core.register_service("empty-response", "http", empty_response)
