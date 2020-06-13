@@ -41,9 +41,6 @@ function cors_response(txn, allowed_methods, allowed_origins)
   local method = txn.sf:method()
   local origin = txn:get_priv()
 
-  -- Always vary on the Origin
-  txn.http:res_add_header("Vary", "Accept-Encoding,Origin")
-
   -- add headers for CORS preflight request
   if method == "OPTIONS" then
     core.Debug("CORS: preflight request OPTIONS")
@@ -65,6 +62,7 @@ function cors_response(txn, allowed_methods, allowed_origins)
   elseif contains(allowed_origins, origin:match("//([^/]+)")) then
     core.Debug("CORS: " .. origin .. " allowed")
     txn.http:res_add_header("Access-Control-Allow-Origin", origin)
+    txn.http:res_add_header("Vary", "Accept-Encoding,Origin")
   else
     core.Debug("CORS: " .. origin .. " not allowed")
   end
