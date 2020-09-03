@@ -29,16 +29,16 @@ global
     lua-load /path/to/cors.lua
 ```
 
-In your `frontend` or `listen` section, capture the client's *Origin* request header by adding `http-request lua.cors`:
+In your `frontend` or `listen` section, capture the client's *Origin* request header by adding `http-request lua.cors` The first parameter is a comma-delimited list of HTTP methods that can be used. The second parameter is comma-delimited list of origins that are permitted to call your service.
 
 ```
-http-request lua.cors
+http-request lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080"
 ```
 
-Within the same section, invoke the `http-response lua.cors` action. The first parameter is a a comma-delimited list of HTTP methods that can be used. The second parameter is comma-delimited list of origins that are permitted to call your service.
+Within the same section, invoke the `http-response lua.cors` action to attach CORS headers to responses from backend servers.
 
 ```
-http-response lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080"
+http-response lua.cors 
 ```
 
 You can also whitelist all domains by setting the second parameter to an asterisk:
