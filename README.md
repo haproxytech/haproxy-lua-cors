@@ -44,5 +44,5 @@ http-response lua.cors
 You can also whitelist all domains by setting the second parameter to an asterisk:
 
 ```
-http-response lua.cors "GET,PUT,POST" "*"
+http-request lua.cors "GET,PUT,POST" "*"
 ```
