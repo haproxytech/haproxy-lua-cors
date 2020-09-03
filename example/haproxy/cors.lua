@@ -56,6 +56,11 @@ function cors_response(txn, allowed_methods, allowed_origins)
 
   local allowed_origins = core.tokenize(allowed_origins, ",")
 
+  -- Strip whitespace
+  for index, value in ipairs(allowed_origins) do
+    allowed_origins[index] = value:gsub("%s+", "")
+  end
+
   if contains(allowed_origins, "*") then
     core.Debug("CORS: " .. "* allowed")
     txn.http:res_add_header("Access-Control-Allow-Origin", "*")
