@@ -10,7 +10,7 @@ services:
     - "name=server1"
 
   haproxy:
-    image: haproxytech/haproxy-ubuntu:2.0
+    image: haproxytech/haproxy-ubuntu:2.2
     volumes:
     - "./haproxy/haproxy.cfg:/etc/haproxy/haproxy.cfg"
     - "./haproxy/cors.lua:/etc/haproxy/cors.lua"
