@@ -32,8 +32,6 @@ function get_allowed_origin(origin, allowed_origins)
       allowed_origins[index] = value:gsub("%s+", "")
     end
 
-    core.Debug("CORS - Origin: " .. origin)
-
     if contains(allowed_origins, "*") then
       return "*"
     elseif contains(allowed_origins, origin:match("//([^/]+)")) then
@@ -44,16 +42,29 @@ function get_allowed_origin(origin, allowed_origins)
   return nil
 end
 
--- Add headers for CORS preflight request and then returns a 204 response.
+-- Adds headers for CORS preflight request and then attaches them to the response
+-- after it comes back from the server. This works with versions of HAProxy prior to 2.2.
+-- The downside is that the OPTIONS request must be sent to the backend server first and can't 
+-- be intercepted and returned immediately.
 -- txn: The current transaction object that gives access to response properties
--- method: The HTTP method
+-- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
+function preflight_request_ver1(txn, allowed_methods)
+  core.Debug("CORS: preflight request received")
+  txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
+  txn.http:res_add_header("Access-Control-Max-Age", 600)
+  core.Debug("CORS: attaching allowed methods to response")
+end
+
+-- Add headers for CORS preflight request and then returns a 204 response.
+-- The 'reply' function used here is available in HAProxy 2.2+. It allows HAProxy to return
+-- a reply without contacting the server.
+-- txn: The current transaction object that gives access to response properties
 -- origin: The value from the 'origin' request header
 -- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
 -- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
-function preflight_request(txn, method, origin, allowed_methods, allowed_origins)
-  core.Debug("CORS: preflight request OPTIONS")
+function preflight_request_ver2(txn, origin, allowed_methods, allowed_origins)
+  core.Debug("CORS: preflight request received")
 
-  -- NOTE: The 'reply' function is available in HAProxy 2.2+
   local reply = txn:reply()
   reply:set_status(204, "No Content")
   reply:add_header("Content-Type", "text/html")
@@ -69,12 +80,13 @@ function preflight_request(txn, method, origin, allowed_methods, allowed_origins
     reply:add_header("Access-Control-Allow-Origin", allowed_origin)
   end
 
-  core.Debug("CORS: Returning reply to CORS preflight request")
+  core.Debug("CORS: Returning reply to preflight request")
   txn:done(reply)
 end
 
 -- When invoked during a request, captures the origin header if present and stores it in a private variable.
--- If the request is OPTIONS, returns a preflight request reply.
+-- If the request is OPTIONS and it is a supported version of HAProxy, returns a preflight request reply.
+-- Otherwise, the preflight request header is added to the response after it has returned from the server.
 -- txn: The current transaction object that gives access to response properties
 -- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
 -- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
@@ -95,9 +107,10 @@ function cors_request(txn, allowed_methods, allowed_origins)
   txn:set_priv(transaction_data)
 
   local method = txn.sf:method()
+  transaction_data["method"] = method
 
-  if method == "OPTIONS" then
-    preflight_request(txn, method, origin, allowed_methods, allowed_origins)
+  if method == "OPTIONS" and txn.reply ~= nil then
+    preflight_request_ver2(txn, origin, allowed_methods, allowed_origins)
   end
 end
 
@@ -107,6 +120,8 @@ function cors_response(txn)
   local transaction_data = txn:get_priv()
   local origin = transaction_data["origin"]
   local allowed_origins = transaction_data["allowed_origins"]
+  local allowed_methods = transaction_data["allowed_methods"]
+  local method = transaction_data["method"]
 
   -- Always vary on the Origin
   txn.http:res_add_header("Vary", "Accept-Encoding,Origin")
@@ -121,6 +136,10 @@ function cors_response(txn)
   if allowed_origin == nil then
     core.Debug("CORS: " .. origin .. " not allowed")
   else
+    if method == "OPTIONS" and txn.reply == nil then
+      preflight_request_ver1(txn, allowed_methods)
+    end
+    
     core.Debug("CORS: " .. origin .. " allowed")
     txn.http:res_add_header("Access-Control-Allow-Origin", allowed_origin)
   end
