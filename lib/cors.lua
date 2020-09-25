@@ -20,35 +20,108 @@ function contains(items, test_str)
   return false
 end
 
--- When invoked during a request, captures the Origin header if present
--- and stores it in a private variable.
-function cors_request(txn)
+-- If the given origin is found within the allowed_origins string, it is returned. Otherwise, nil is returned.
+-- origin: The value from the 'origin' request header
+-- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
+function get_allowed_origin(origin, allowed_origins)
+  if origin ~= nil then
+    local allowed_origins = core.tokenize(allowed_origins, ",")
+
+    -- Strip whitespace
+    for index, value in ipairs(allowed_origins) do
+      allowed_origins[index] = value:gsub("%s+", "")
+    end
+
+    if contains(allowed_origins, "*") then
+      return "*"
+    elseif contains(allowed_origins, origin:match("//([^/]+)")) then
+      return origin
+    end
+  end
+
+  return nil
+end
+
+-- Adds headers for CORS preflight request and then attaches them to the response
+-- after it comes back from the server. This works with versions of HAProxy prior to 2.2.
+-- The downside is that the OPTIONS request must be sent to the backend server first and can't 
+-- be intercepted and returned immediately.
+-- txn: The current transaction object that gives access to response properties
+-- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
+function preflight_request_ver1(txn, allowed_methods)
+  core.Debug("CORS: preflight request received")
+  txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
+  txn.http:res_add_header("Access-Control-Max-Age", 600)
+  core.Debug("CORS: attaching allowed methods to response")
+end
+
+-- Add headers for CORS preflight request and then returns a 204 response.
+-- The 'reply' function used here is available in HAProxy 2.2+. It allows HAProxy to return
+-- a reply without contacting the server.
+-- txn: The current transaction object that gives access to response properties
+-- origin: The value from the 'origin' request header
+-- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
+-- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
+function preflight_request_ver2(txn, origin, allowed_methods, allowed_origins)
+  core.Debug("CORS: preflight request received")
+
+  local reply = txn:reply()
+  reply:set_status(204, "No Content")
+  reply:add_header("Content-Type", "text/html")
+  reply:add_header("Access-Control-Allow-Methods", allowed_methods)
+  reply:add_header("Access-Control-Max-Age", 600)
+
+  local allowed_origin = get_allowed_origin(origin, allowed_origins)
+
+  if allowed_origin == nil then
+    core.Debug("CORS: " .. origin .. " not allowed")
+  else
+    core.Debug("CORS: " .. origin .. " allowed")
+    reply:add_header("Access-Control-Allow-Origin", allowed_origin)
+  end
+
+  core.Debug("CORS: Returning reply to preflight request")
+  txn:done(reply)
+end
+
+-- When invoked during a request, captures the origin header if present and stores it in a private variable.
+-- If the request is OPTIONS and it is a supported version of HAProxy, returns a preflight request reply.
+-- Otherwise, the preflight request header is added to the response after it has returned from the server.
+-- txn: The current transaction object that gives access to response properties
+-- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
+-- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
+function cors_request(txn, allowed_methods, allowed_origins)
   local headers = txn.http:req_get_headers()
-  local origin = headers["origin"]
+  local origin = headers["origin"][0]
+
+  local transaction_data = {}
 
   if origin ~= nil then
     core.Debug("CORS: Got 'Origin' header: " .. headers["origin"][0])
-    txn:set_priv(headers["origin"][0])
+    transaction_data["origin"] = origin
   end
-end
 
--- Add headers for CORS preflight request
-function preflight_request(txn, method, allowed_methods)
-  if method == "OPTIONS" then
-    core.Debug("CORS: preflight request OPTIONS")
-    txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
-    txn.http:res_add_header("Access-Control-Max-Age", 600)
-  end
-end
+  transaction_data["allowed_methods"] = allowed_methods
+  transaction_data["allowed_origins"] = allowed_origins
 
--- When invoked during a response, sets CORS headers so that the browser
--- can read the response from permitted domains.
--- txn: The current transaction object that gives access to response properties.
--- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
--- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
-function cors_response(txn, allowed_methods, allowed_origins)
+  txn:set_priv(transaction_data)
+
   local method = txn.sf:method()
-  local origin = txn:get_priv()
+  transaction_data["method"] = method
+
+  if method == "OPTIONS" and txn.reply ~= nil then
+    preflight_request_ver2(txn, origin, allowed_methods, allowed_origins)
+  end
+end
+
+-- When invoked during a response, sets CORS headers so that the browser can read the response from permitted domains.
+-- txn: The current transaction object that gives access to response properties.
+function cors_response(txn)
+  local transaction_data = txn:get_priv()
+  local origin = transaction_data["origin"]
+  local allowed_origins = transaction_data["allowed_origins"]
+  local allowed_methods = transaction_data["allowed_methods"]
+  local method = transaction_data["method"]
 
   -- Always vary on the Origin
   txn.http:res_add_header("Vary", "Accept-Encoding,Origin")
@@ -58,26 +131,20 @@ function cors_response(txn, allowed_methods, allowed_origins)
     return
   end
 
-  local allowed_origins = core.tokenize(allowed_origins, ",")
+  local allowed_origin = get_allowed_origin(origin, allowed_origins)
 
-  -- Strip whitespace
-  for index, value in ipairs(allowed_origins) do
-    allowed_origins[index] = value:gsub("%s+", "")
-  end  
-
-  if contains(allowed_origins, "*") then
-    core.Debug("CORS: " .. "* allowed")
-    txn.http:res_add_header("Access-Control-Allow-Origin", "*")
-    preflight_request(txn, method, allowed_methods)
-  elseif contains(allowed_origins, origin:match("//([^/]+)")) then
-    core.Debug("CORS: " .. origin .. " allowed")
-    txn.http:res_add_header("Access-Control-Allow-Origin", origin)
-    preflight_request(txn, method, allowed_methods)
-  else
+  if allowed_origin == nil then
     core.Debug("CORS: " .. origin .. " not allowed")
+  else
+    if method == "OPTIONS" and txn.reply == nil then
+      preflight_request_ver1(txn, allowed_methods)
+    end
+    
+    core.Debug("CORS: " .. origin .. " allowed")
+    txn.http:res_add_header("Access-Control-Allow-Origin", allowed_origin)
   end
 end
 
 -- Register the actions with HAProxy
-core.register_action("cors", {"http-req"}, cors_request, 0)
-core.register_action("cors", {"http-res"}, cors_response, 2)
+core.register_action("cors", {"http-req"}, cors_request, 2)
+core.register_action("cors", {"http-res"}, cors_response, 0)
