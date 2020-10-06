@@ -29,7 +29,6 @@ Load the *cors.lua* file via the `lua-load` directive in the `global` section of
 
 ```
 global
-    log stdout local0
     lua-load /path/to/cors.lua
 ```
 
