@@ -2,7 +2,7 @@
 
 Lua library for enabling CORS in HAProxy.
 
-# Background
+## Background
 
 Cross-origin Request Sharing allows you to permit client-side code running within a different domain to call your services. This module extends HAProxy so that it can:
 
@@ -50,7 +50,7 @@ http-request lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080", "X-
 http-response lua.cors 
 ```
 
-Example 2: Allow all methods, origins, and headers
+**Example 2: Allow all methods, origins, and headers**
 
 ```
 http-request lua.cors "*" "*", "*"
