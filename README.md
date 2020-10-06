@@ -6,7 +6,9 @@ Lua library for enabling CORS in HAProxy.
 
 Cross-origin Request Sharing allows you to permit client-side code running within a different domain to call your services. This module extends HAProxy so that it can:
 
-* set an *Access-Control-Allow-Methods* and *Access-Control-Max-Age* header in response to CORS preflight requests.
+* set an *Access-Control-Allow-Methods* header in response to a preflight request
+* set an *Access-Control-Allow-Headers* header in response to a preflight request
+* set an *Access-Control-Max-Age* header in response to a preflight request
 * set an *Access-Control-Allow-Origin* header to whitelist a domain. Note that this header should only ever return either a single domain or an asterisk (*). Otherwise, it would have been possible to hardcode all permitted domains without the need for Lua scripting.
 
 This library checks the incoming *Origin* header, which contains the calling code's domain, and tries to match it with the list of permitted domains. If there is a match, that domain is sent back in the *Access-Control-Allow-Origin* header.
@@ -31,22 +33,29 @@ global
     lua-load /path/to/cors.lua
 ```
 
-In your `frontend` or `listen` section, capture the client's *Origin* request header by adding `http-request lua.cors` The first parameter is a comma-delimited list of HTTP methods that can be used. The second parameter is comma-delimited list of origins that are permitted to call your service.
+In your `frontend` or `listen` section, capture the client's *Origin* request header by adding `http-request lua.cors` Its parameters are:
 
-```
-http-request lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080"
-```
+* The first parameter is a comma-delimited list of HTTP methods that can be used. This is used to set the *Access-Control-Allow-Methods* header.
+* The second parameter is comma-delimited list of origins that are permitted to call your service. This is used to set the *Access-Control-Allow-Origin* header.
+* The third parameter is a comma-delimited list of custom headers that can be used. This is used to set the *Access-Control-Allow-Headers* header.
 
-Within the same section, invoke the `http-response lua.cors` action to attach CORS headers to responses from backend servers.
+Each of these parameters can be set to an asterisk (*) to allow all values.
 
+Within the same `frontend` or `listen` section, add the `http-response lua.cors` action to attach CORS headers to responses from backend servers.
+
+**Example 1: Allow specific methods, origins and headers**
 ```
+http-request lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080", "X-Custom-Header1,X-Custom-Header2"
+
 http-response lua.cors 
 ```
 
-You can also whitelist all domains by setting the second parameter to an asterisk:
+Example 2: Allow all methods, origins, and headers
 
 ```
-http-request lua.cors "GET,PUT,POST" "*"
+http-request lua.cors "*" "*", "*"
+
+http-response lua.cors 
 ```
 
 ## Preflight Requests
@@ -57,7 +66,8 @@ For versions prior to 2.2, the module must forward the request to the backend se
 
 This module returns the following CORS headers for a preflight request:
 
-* `Access-Control-Allow-Method` - set to the HTTP methods you set with `http-request lua cors` in the haproxy.cfg file
+* `Access-Control-Allow-Methods` - set to the HTTP methods you set with `http-request lua cors` in the haproxy.cfg file
+* `Access-Conrol-Allow-Headers` - set to the HTTP headers you set with `http-request lua cors` in the haproxy.cfg file
 * `Access-Control-Max-Age` - set to 600
 
 ## Example

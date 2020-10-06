@@ -15,7 +15,7 @@
 
               var btn = document.getElementById('putdata_btn');
               btn.addEventListener("click", function() {
-                fetch('http://localhost:8080/putdata', { method: 'put', body: "test=test" }).then(function(response) {
+                fetch('http://localhost:8080/putdata', { method: 'put', body: "test=test", headers: { 'X-Custom-Header': 'test' } }).then(function(response) {
                     div.innerHTML = "PUT succeeded";
                 });
               });

@@ -48,9 +48,11 @@ end
 -- be intercepted and returned immediately.
 -- txn: The current transaction object that gives access to response properties
 -- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
-function preflight_request_ver1(txn, allowed_methods)
+-- allowed_headers: Comma-delimited list of allowed headers. (e.g. X-Header1,X-Header2)
+function preflight_request_ver1(txn, allowed_methods, allowed_headers)
   core.Debug("CORS: preflight request received")
   txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
+  txn.http:res_add_header("Access-Control-Allow-Headers", allowed_headers)
   txn.http:res_add_header("Access-Control-Max-Age", 600)
   core.Debug("CORS: attaching allowed methods to response")
 end
@@ -62,13 +64,15 @@ end
 -- origin: The value from the 'origin' request header
 -- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
 -- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
-function preflight_request_ver2(txn, origin, allowed_methods, allowed_origins)
+-- allowed_headers: Comma-delimited list of allowed headers. (e.g. X-Header1,X-Header2)
+function preflight_request_ver2(txn, origin, allowed_methods, allowed_origins, allowed_headers)
   core.Debug("CORS: preflight request received")
 
   local reply = txn:reply()
   reply:set_status(204, "No Content")
   reply:add_header("Content-Type", "text/html")
   reply:add_header("Access-Control-Allow-Methods", allowed_methods)
+  reply:add_header("Access-Control-Allow-Headers", allowed_headers)
   reply:add_header("Access-Control-Max-Age", 600)
 
   local allowed_origin = get_allowed_origin(origin, allowed_origins)
@@ -90,7 +94,8 @@ end
 -- txn: The current transaction object that gives access to response properties
 -- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
 -- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
-function cors_request(txn, allowed_methods, allowed_origins)
+-- allowed_headers: Comma-delimited list of allowed headers. (e.g. X-Header1,X-Header2)
+function cors_request(txn, allowed_methods, allowed_origins, allowed_headers)
   local headers = txn.http:req_get_headers()
   local origin = headers["origin"][0]
 
@@ -103,6 +108,7 @@ function cors_request(txn, allowed_methods, allowed_origins)
 
   transaction_data["allowed_methods"] = allowed_methods
   transaction_data["allowed_origins"] = allowed_origins
+  transaction_data["allowed_headers"] = allowed_headers
 
   txn:set_priv(transaction_data)
 
@@ -110,7 +116,7 @@ function cors_request(txn, allowed_methods, allowed_origins)
   transaction_data["method"] = method
 
   if method == "OPTIONS" and txn.reply ~= nil then
-    preflight_request_ver2(txn, origin, allowed_methods, allowed_origins)
+    preflight_request_ver2(txn, origin, allowed_methods, allowed_origins, allowed_headers)
   end
 end
 
@@ -121,6 +127,7 @@ function cors_response(txn)
   local origin = transaction_data["origin"]
   local allowed_origins = transaction_data["allowed_origins"]
   local allowed_methods = transaction_data["allowed_methods"]
+  local allowed_headers = transaction_data["allowed_headers"]
   local method = transaction_data["method"]
 
   -- Always vary on the Origin
@@ -137,7 +144,7 @@ function cors_response(txn)
     core.Debug("CORS: " .. origin .. " not allowed")
   else
     if method == "OPTIONS" and txn.reply == nil then
-      preflight_request_ver1(txn, allowed_methods)
+      preflight_request_ver1(txn, allowed_methods, allowed_headers)
     end
     
     core.Debug("CORS: " .. origin .. " allowed")
@@ -146,5 +153,5 @@ function cors_response(txn)
 end
 
 -- Register the actions with HAProxy
-core.register_action("cors", {"http-req"}, cors_request, 2)
+core.register_action("cors", {"http-req"}, cors_request, 3)
 core.register_action("cors", {"http-res"}, cors_response, 0)
