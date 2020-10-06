@@ -22,7 +22,7 @@ end
 
 -- If the given origin is found within the allowed_origins string, it is returned. Otherwise, nil is returned.
 -- origin: The value from the 'origin' request header
--- allowed_methods: Comma-delimited list of allowed HTTP methods. (e.g. GET,POST,PUT,DELETE)
+-- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
 function get_allowed_origin(origin, allowed_origins)
   if origin ~= nil then
     local allowed_origins = core.tokenize(allowed_origins, ",")
