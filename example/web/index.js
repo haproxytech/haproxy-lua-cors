@@ -15,6 +15,7 @@ app.get('/', function (req, res) {
 
 // the API
 app.get('/getdata', function(req, res) {
+  res.set("Access-Control-Allow-Origin", "blah.com") // this should be overwritten by HAProxy
   res.send('Message from the server!')
 })
 

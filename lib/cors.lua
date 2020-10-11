@@ -51,9 +51,9 @@ end
 -- allowed_headers: Comma-delimited list of allowed headers. (e.g. X-Header1,X-Header2)
 function preflight_request_ver1(txn, allowed_methods, allowed_headers)
   core.Debug("CORS: preflight request received")
-  txn.http:res_add_header("Access-Control-Allow-Methods", allowed_methods)
-  txn.http:res_add_header("Access-Control-Allow-Headers", allowed_headers)
-  txn.http:res_add_header("Access-Control-Max-Age", 600)
+  txn.http:res_set_header("Access-Control-Allow-Methods", allowed_methods)
+  txn.http:res_set_header("Access-Control-Allow-Headers", allowed_headers)
+  txn.http:res_set_header("Access-Control-Max-Age", 600)
   core.Debug("CORS: attaching allowed methods to response")
 end
 
@@ -148,7 +148,7 @@ function cors_response(txn)
     end
     
     core.Debug("CORS: " .. origin .. " allowed")
-    txn.http:res_add_header("Access-Control-Allow-Origin", allowed_origin)
+    txn.http:res_set_header("Access-Control-Allow-Origin", allowed_origin)
   end
 end
 
