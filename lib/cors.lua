@@ -97,13 +97,11 @@ end
 -- allowed_headers: Comma-delimited list of allowed headers. (e.g. X-Header1,X-Header2)
 function cors_request(txn, allowed_methods, allowed_origins, allowed_headers)
   local headers = txn.http:req_get_headers()
-  local origin = headers["origin"][0]
-
   local transaction_data = {}
-
-  if origin ~= nil then
+  
+  if headers["origin"] ~= nil and headers["origin"][0] ~= nil then
     core.Debug("CORS: Got 'Origin' header: " .. headers["origin"][0])
-    transaction_data["origin"] = origin
+    transaction_data["origin"] = headers["origin"][0]
   end
 
   transaction_data["allowed_methods"] = allowed_methods
@@ -124,6 +122,11 @@ end
 -- txn: The current transaction object that gives access to response properties.
 function cors_response(txn)
   local transaction_data = txn:get_priv()
+
+  if transaction_data == nil then
+    return
+  end
+  
   local origin = transaction_data["origin"]
   local allowed_origins = transaction_data["allowed_origins"]
   local allowed_methods = transaction_data["allowed_methods"]
