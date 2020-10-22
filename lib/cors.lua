@@ -98,12 +98,14 @@ end
 function cors_request(txn, allowed_methods, allowed_origins, allowed_headers)
   local headers = txn.http:req_get_headers()
   local transaction_data = {}
+  local origin = nil
   
   if headers["origin"] ~= nil and headers["origin"][0] ~= nil then
     core.Debug("CORS: Got 'Origin' header: " .. headers["origin"][0])
-    transaction_data["origin"] = headers["origin"][0]
+    origin = headers["origin"][0]
   end
-
+  
+  transaction_data["origin"] = origin
   transaction_data["allowed_methods"] = allowed_methods
   transaction_data["allowed_origins"] = allowed_origins
   transaction_data["allowed_headers"] = allowed_headers
