@@ -82,6 +82,10 @@ function preflight_request_ver2(txn, origin, allowed_methods, allowed_origins, a
   else
     core.Debug("CORS: " .. origin .. " allowed")
     reply:add_header("Access-Control-Allow-Origin", allowed_origin)
+
+    if allowed_origin ~= "*" then
+      reply:add_header("Vary", "Accept-Encoding,Origin")
+    end
   end
 
   core.Debug("CORS: Returning reply to preflight request")
@@ -135,9 +139,6 @@ function cors_response(txn)
   local allowed_headers = transaction_data["allowed_headers"]
   local method = transaction_data["method"]
 
-  -- Always vary on the Origin
-  txn.http:res_add_header("Vary", "Accept-Encoding,Origin")
-
   -- Bail if client did not send an Origin
   if origin == nil or origin == '' then
     return
@@ -154,6 +155,10 @@ function cors_response(txn)
     
     core.Debug("CORS: " .. origin .. " allowed")
     txn.http:res_set_header("Access-Control-Allow-Origin", allowed_origin)
+
+    if allowed_origin ~= "*" then
+      txn.http:res_add_header("Vary", "Accept-Encoding,Origin")
+    end
   end
 end
 
