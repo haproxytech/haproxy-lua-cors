@@ -108,6 +108,12 @@ function cors_request(txn, allowed_methods, allowed_origins, allowed_headers)
     core.Debug("CORS: Got 'Origin' header: " .. headers["origin"][0])
     origin = headers["origin"][0]
   end
+
+  -- Bail if client did not send an Origin
+  -- for example, it may be a regular OPTIONS request that is not a CORS preflight request
+  if origin == nil or origin == '' then
+    return
+  end
   
   transaction_data["origin"] = origin
   transaction_data["allowed_methods"] = allowed_methods
