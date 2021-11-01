@@ -44,7 +44,7 @@ Within the same `frontend` or `listen` section, add the `http-response lua.cors`
 
 **Example 1: Allow specific methods, origins and headers**
 ```
-http-request lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080", "X-Custom-Header1,X-Custom-Header2"
+http-request lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080" "X-Custom-Header1,X-Custom-Header2"
 
 http-response lua.cors 
 ```
@@ -52,7 +52,7 @@ http-response lua.cors
 **Example 2: Allow all methods, origins, and headers**
 
 ```
-http-request lua.cors "*" "*", "*"
+http-request lua.cors "*" "*" "*"
 
 http-response lua.cors 
 ```
