@@ -21,22 +21,68 @@ function contains(items, test_str)
 end
 
 -- If the given origin is found within the allowed_origins string, it is returned. Otherwise, nil is returned.
+-- domains list of allowed origins behave in new way with LUA's patterns, modification made by Piotr Pazola <piotr@webtrip.pl>
+-- more about notation of patterns: https://www.lua.org/pil/20.2.html
 -- origin: The value from the 'origin' request header
 -- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,localhost:8080,test.com)
+-- i.e. https://mydomain.com:443 to allow only HTTPS of mydomain.com from default HTTPS source port
+-- i.e. http://mydomain.com:80 to allow only HTTP of mydomain.com from default HTTP source port
+-- i.e. http://mydomain.com to allow only HTTP of mydomain.com from ALL source ports
+-- i.e. //mydomain.com to allow only http(s)://mydomain.com from ALL source ports
+-- i.e. .mydomain.com to allow ALL subdomains of mydomain.com from ALL source ports
+-- i.e. .mydomain.com:443 to allow ALL subdomains of mydomain.com from default HTTPS source port
+-- i.e. //localhost to allow http(s)://localhost from ALL source ports
+-- i.e. http://localhost to allow only HTTP of localhost from ALL source ports
+-- i.e. https://localhost:8080 to allow only HTTPS of localhost from 8080 source port
+-- i.e. ".mydomain.com:443, //mydomain.com:443, //localhost" allows all subdomains and main domain of mydomain.com only for HTTPS from default HTTPS port and allows all HTTP and HTTPS connections from ALL source port for localhost
 function get_allowed_origin(origin, allowed_origins)
   if origin ~= nil then
     local allowed_origins = core.tokenize(allowed_origins, ",")
 
-    -- Strip whitespace
-    for index, value in ipairs(allowed_origins) do
-      allowed_origins[index] = value:gsub("%s+", "")
-    end
-
+    -- wildcard CORS, return it and it is done
     if contains(allowed_origins, "*") then
       return "*"
-    elseif contains(allowed_origins, origin:match("//([^/]+)")) then
-      return origin
     end
+
+    -- remove : if there is no port at the end of origin
+    if string.find(origin, ":+$") then
+      origin = origin:gsub(":$", "")
+    end
+
+    local test_origin = origin
+    local test_origin_port = 0
+
+    -- set default port depends on protocol
+    -- it is required to build test string which includes always port number
+    if string.find(test_origin, "^https://") then
+      test_origin_port = 443
+    else
+      test_origin_port = 80
+    end
+
+    -- if there is no port number in origin, add it to test string
+    if string.find(test_origin, ":%d+$") == nil then
+      test_origin = test_origin .. ":" .. test_origin_port
+    end
+
+    for index, value in ipairs(allowed_origins) do
+      -- remove spaces
+      value = value:gsub("%s+", "")
+      -- build pattern for match: escape dots and add suffix of optional port if needed and hard sign of end of string
+      value = value:gsub("%.", "%%.")
+      if string.find(value, ":%d+$") == nil then
+        value = value .. "[:]+[0-9]+"
+      end
+      value = value .. "$"
+
+      core.Debug("Value: " .. value .. ", looking for: " .. origin)
+
+      if test_origin:match(value) then
+        core.Debug("Value: " .. value .. ", tested origin: " .. test_origin .. ", matched origin: " .. origin)
+        return origin
+      end
+    end
+
   end
 
   return nil
