@@ -99,7 +99,7 @@ Check the *example* directory for a working demo. It uses Docker Compose to run 
 
 Run the unit tests:
 
-1. Run the example with Docker Compose:
+1. Run the unit tests with Docker Compose:
 
    ```
    docker-compose -f docker-compose.tests.yml up
