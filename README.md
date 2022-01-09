@@ -42,6 +42,21 @@ Each of these parameters can be set to an asterisk (*) to allow all values.
 
 Within the same `frontend` or `listen` section, add the `http-response lua.cors` action to attach CORS headers to responses from backend servers.
 
+## Allowed origin patterns
+
+For the list of allowed origins, you can specify patterns such as:
+
+| pattern                       | example                  | description                                                             |
+|-------------------------------|--------------------------|-------------------------------------------------------------------------|
+| domain name alone             | mydomain.com             | allow any scheme (HTTP or HTTPS) for mydomain.com from ALL source ports |
+| generic schema and domain     | //mydomain.com           | allow any scheme (HTTP or HTTPS) for mydomain.com from ALL source ports |
+| schema and domain name        | https://mydomain.com     | allow only HTTPS of mydomain.com                                        |
+| schema, domain name, and port | http://mydomain.com:8080 | allow only HTTP of mydomain.com from port 8080                          |
+| dot and domain name           | .mydomain.com            | allow ALL subdomains of mydomain.com from ALL source ports              |
+| dot, domain name, and port    | .mydomain.com:443        | allow ALL subdomains of mydomain.com from default HTTPS source port     |
+
+## Examples
+
 **Example 1: Allow specific methods, origins and headers**
 ```
 http-request lua.cors "GET,PUT,POST" "example.com,localhost,localhost:8080" "X-Custom-Header1,X-Custom-Header2"
@@ -71,4 +86,21 @@ This module returns the following CORS headers for a preflight request:
 
 ## Example
 
-Check the *example* directory for a working demo. It uses Docker Compose to run HAProxy and a web server in containers. Go to http://localhost to test it. It demonstrates a preflight request by clicking the "PUT data" button.
+Check the *example* directory for a working demo. It uses Docker Compose to run HAProxy and a web server in containers. 
+
+1. Run the example with Docker Compose:
+
+   ```
+   docker-compose -f docker-compose.example.yml up
+   ```
+2. Go to http://localhost to test it. It demonstrates a preflight request by clicking the "PUT data" button.
+
+## Tests
+
+Run the unit tests:
+
+1. Run the example with Docker Compose:
+
+   ```
+   docker-compose -f docker-compose.tests.yml up
+   ```

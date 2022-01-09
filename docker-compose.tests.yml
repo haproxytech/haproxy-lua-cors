@@ -1,0 +1,11 @@
+version: "3"
+services:
+
+   tester:
+     image: nickblah/lua:5.3
+     working_dir: /
+     volumes:
+       - ./lib/cors.lua:/cors.lua
+       - ./tests/luaunit.lua:/luaunit.lua
+       - ./tests/cors_tests.lua:/cors_tests.lua
+     entrypoint: ["lua", "./cors_tests.lua"]
