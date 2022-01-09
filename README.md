@@ -48,11 +48,11 @@ For the list of allowed origins, you can specify patterns such as:
 
 | pattern                       | example                  | description                                                             |
 |-------------------------------|--------------------------|-------------------------------------------------------------------------|
-| domain name alone             | mydomain.com             | allow any scheme (HTTP or HTTPS) for mydomain.com from ALL source ports |
-| generic schema and domain     | //mydomain.com           | allow any scheme (HTTP or HTTPS) for mydomain.com from ALL source ports |
+| domain name alone             | mydomain.com             | allow any scheme (HTTP or HTTPS) for mydomain.com                       |
+| generic schema and domain     | //mydomain.com           | allow any scheme (HTTP or HTTPS) for mydomain.com                       |
 | schema and domain name        | https://mydomain.com     | allow only HTTPS of mydomain.com                                        |
 | schema, domain name, and port | http://mydomain.com:8080 | allow only HTTP of mydomain.com from port 8080                          |
-| dot and domain name           | .mydomain.com            | allow ALL subdomains of mydomain.com from ALL source ports              |
+| dot and domain name           | .mydomain.com            | allow ALL subdomains of mydomain.com                                    |
 | dot, domain name, and port    | .mydomain.com:443        | allow ALL subdomains of mydomain.com from default HTTPS source port     |
 
 ## Examples

@@ -70,12 +70,12 @@ end
 -- If the given origin is found within the allowed_origins string, it is returned. Otherwise, nil is returned.
 -- origin: The value from the 'origin' request header
 -- allowed_origins: Comma-delimited list of allowed origins. (e.g. localhost,https://localhost:8080,//test.com)
---   e.g. localhost                : allow http(s)://localhost from ALL source ports
---   e.g. //localhost              : allow http(s)://localhost from ALL source ports
+--   e.g. localhost                : allow http(s)://localhost
+--   e.g. //localhost              : allow http(s)://localhost
 --   e.g. https://mydomain.com     : allow only HTTPS of mydomain.com
 --   e.g. http://mydomain.com      : allow only HTTP of mydomain.com
 --   e.g. http://mydomain.com:8080 : allow only HTTP of mydomain.com from port 8080
---   e.g. //mydomain.com           : allow only http(s)://mydomain.com from ALL source ports
+--   e.g. //mydomain.com           : allow only http(s)://mydomain.com
 --   e.g. .mydomain.com            : allow ALL subdomains of mydomain.com from ALL source ports
 --   e.g. .mydomain.com:443        : allow ALL subdomains of mydomain.com from default HTTPS source port
 -- 
