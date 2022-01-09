@@ -91,6 +91,11 @@ function test_build_pattern_6()
   luaunit.assertEquals(result, "%.test%.com:8080$")
 end
 
+function test_build_pattern_7()
+  local result = cors.build_pattern("http://test.com:*")
+  luaunit.assertEquals(result, "http://test%.com[:]+[0-9]+$")
+end
+
 function test_get_allowed_origin_case_1()
   local result = cors.get_allowed_origin("http://test.com", {"http://test.com"})
   luaunit.assertEquals(result, "http://test.com")
@@ -144,6 +149,12 @@ end
 function test_get_allowed_origin_case_11()
   local result = cors.get_allowed_origin("https://test.com", {"localhost", "*"})
   luaunit.assertEquals(result, "*")
+end
+
+
+function test_get_allowed_origin_case_12()
+  local result = cors.get_allowed_origin("http://test.com:8080", {"http://test.com:*"})
+  luaunit.assertEquals(result, "http://test.com:8080")
 end
 
 -- this line must go at the end

@@ -56,6 +56,11 @@ M.build_pattern = function(pattern)
       pattern = "//" .. pattern
     end
 
+    -- an asterisk for the port means allow all ports
+    if string.find(pattern, "[:]+%*$") ~= nil then
+      pattern = pattern:gsub("[:]+%*$", "[:]+[0-9]+")
+    end
+
     -- escape dots in pattern
     pattern = pattern:gsub("%.", "%%.")
 

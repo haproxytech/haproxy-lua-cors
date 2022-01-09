@@ -54,6 +54,7 @@ For the list of allowed origins, you can specify patterns such as:
 | schema, domain name, and port | http://mydomain.com:8080 | allow only HTTP of mydomain.com from port 8080                          |
 | dot and domain name           | .mydomain.com            | allow ALL subdomains of mydomain.com                                    |
 | dot, domain name, and port    | .mydomain.com:443        | allow ALL subdomains of mydomain.com from default HTTPS source port     |
+| port is *                     | http://mydomain.com:*    | allow only HTTP of mydomain.com on ANY ports                            |
 
 ## Examples
 
