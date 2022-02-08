@@ -61,8 +61,9 @@ M.build_pattern = function(pattern)
       pattern = pattern:gsub("[:]+%*$", "[:]+[0-9]+")
     end
 
-    -- escape dots in pattern
+    -- escape dots and dashes in pattern
     pattern = pattern:gsub("%.", "%%.")
+    pattern = pattern:gsub("%-", "%%-")
 
     -- append end character
     pattern = pattern .. "$"
