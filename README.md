@@ -2,6 +2,10 @@
 
 Lua library for enabling CORS in HAProxy.
 
+## Supported versions of HAProxy
+
+This library will work with HAProxy version 1.8 and newer.
+
 ## Background
 
 Cross-origin Request Sharing allows you to permit client-side code running within a different domain to call your services. This module extends HAProxy so that it can:
