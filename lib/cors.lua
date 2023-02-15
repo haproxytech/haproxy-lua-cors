@@ -175,7 +175,13 @@ function cors_request(txn, allowed_methods, allowed_origins, allowed_headers)
   local transaction_data = {}
   local origin = nil
   local allowed_origins = core.tokenize(allowed_origins, ",")
-  
+  local custom_allowed_origins = txn.get_var(txn, 'txn.custom_allowed_origins')
+
+  if custom_allowed_origins ~= nil and custom_allowed_origins ~= '' then
+    core.Debug("CORS: Got 'custom_allowed_origins' var: " .. custom_allowed_origins)
+    table.insert(allowed_origins, custom_allowed_origins)
+  end
+
   if headers["origin"] ~= nil and headers["origin"][0] ~= nil then
     core.Debug("CORS: Got 'Origin' header: " .. headers["origin"][0])
     origin = headers["origin"][0]
